@@ -1,7 +1,7 @@
 # Class metadata
 
 > **Note**: This page contains information about design part of features (how they look like in code).  
-> For implementation details see [Metadata generation](metadata-generation.md) page.
+> For implementation details see [Metadata generation] page.
 
 ## Summary
 
@@ -10,23 +10,11 @@ Access to Unreal Engine objects (instances of `UObject` and it's derivatives) fr
 - Unreal Engine requires lots of metadata to register any class. 
 This metadata is a boilerplate code, which is very hard to maintain by hands, so it have to be generated on compile-time.
 - Exposed types can be detected by attributes, so all exposed .NET classes must have some specific attributes attached to them. 
-Those attributes will be used to change generated metadata.
-
-## Wrapper instance lifetime
-
-Garbage Collector in .NET can destroy object when nothing is referencing that object.  
-If reference to an instance of C# struct is passed to unmanaged code, GC won't know about that reference and can delete or move this object.  
-
-According to [.NET GC Fundamentals](https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals#memory-release) static fields are application roots.  
-It means that objects referenced by static field can't be collected, which leads to use of static object that will contain all instances of all wrappers by some unqiue ID. 
-
-Wrapper can be instantiated only after UE object it belongs to. Also lifetime of wrapper is limited to lifetime of owning object.
-
-> **Warning**: do not reference wrappers from other objects! It can lead to unexpected behavior, in most cases to memory leaks, `AccessViolationException` and `NullReferenceException` or even silent data corruption which can be very hard to debug.
+Those attributes can be used to change generated metadata.
 
 ## Naming
 
-According to [Naming Conventions](https://docs.unrealengine.com/4.27/en-US/ProductionPipelines/DevelopmentSetup/CodingStandard/#namingconventions) of UE Coding Standard, in C++ code type names **are prefixed with** an additional **upper-case letter** to distinguish them from variable names:
+According to [UE Naming Conventions], in C++ code type names **are prefixed with** an additional **upper-case letter** to distinguish them from variable names:
 - U ─ Inherited from `UObject`
 - A ─ Inherited from `AActor`
 - S ─ Inherited from `SWidget`
@@ -39,10 +27,6 @@ Because **all types** known by Unreal Engine **must have a prefix**, exposed typ
 
 > **Note**: Source generator will add prefix for exposed types, so there is no need to do it manually!
 
-# Details
-
-This section describes some use case scenarios and solutions divided by categories.
-
 ## Class
 
 It's impossible to use native type as a real parent for managed class, but it is possible to create a partial wrapper for existing native type, because Unreal Engine have a reflection system, which allows to receive all the required information about requested type.
@@ -50,15 +34,74 @@ It's impossible to use native type as a real parent for managed class, but it is
 > **Note**: Information about native types can be obtained only via Unreal Engine Reflection system, which means that only types marked with `UCLASS()`, `USTRUCT()`, `UENUM()` or `UINTERFACE()` can be obtained.
 
 The most easy and simple solution is to provide an attribute similar to UE macro `UCLASS()` which will be used in the same way:
-- `UClass` attribute can be used to create new UE class and bind .NET wrapper to them.
-- `NativeUClass` can be used to create and bind .NET wrapper to existing UE class.
-- `ClassInfo` attribute can be used to provide additional information about exposed or imported classes.
+- `UClass` attribute can be used to create new UE class and bind .NET wrapper to them
+- `NativeUClass` can be used to create and bind .NET wrapper to existing UE class
+- `ClassInfo` attribute can be used to provide additional information about exposed or imported classes
+- `Meta` attribute can be used to provide additional editor-only metadata
 
 This attributes will be used by source generator to create all the required metadata.
 
-> ## Scenarios
+> **Note**: `ClassInfo` and `Meta` attributes will have effect only when `UClass` or `NativeUClass` attributes are specified
+
+### Style
+
+C++ and C# code will look and feel almost the same, but a little bit cleaner and more readable.
+
+*C++ version*:
+```cpp
+UCLASS()
+class UMyAwesomeNativeObject : public UObject
+{
+    GENERATED_BODY()
+    
+    public:
+
+    UPROPERTY()
+    int SpecialInteger;
+
+    // implementation
+}
+```
+
+*C# version*:
+```csharp
+[UClass("Object")]
+public class MyAwesomeManagedObject
+{
+    public UProperty<int> SpecialInteger { get; init; }
+
+    // implementation
+}
+```
+
+### [Examples](#class-1)
+
+## Property
+
+There are several ways to implement interaction with real data, but the simplest one ─ access real value via pointer.  
+Because it is not possible to intercept pointers on source generation phase of compilation, as a solution will be special types, which will allow to interact with UE objects and values:
+- `UProperty<T>` allows to read and write values
+- `ReadOnlyUProperty<T>` allows only reading of values
+
+Also there are some attributes, that allow to change metadata: `PropertyInfo` and `Meta`.
+
+All instances of property wrappers are created when class wrapper instance is being created. For more info read [Object handling].
+
+### [Examples](#property-1)
+
+## Function
+
+> Not implemented yet.
+
+## Event (Delegate)
+
+> Not implemented yet.
 
 ---
+
+# Possible scenarios and use cases
+
+## Class
 
 ### Replicate existing type
 
@@ -126,7 +169,7 @@ Cases below illustrate how new types can be created and exposed to Unreal Engine
 >  }
 >  ```
 >  
->  To expose C# class, just mark it with `[UClass()]` attribute. 
+>  To expose C# class, just mark it with `UClass` attribute. 
 >  Source generator will produce all the required metadata according to provided attribute arguments.
 
 ---
@@ -148,7 +191,7 @@ Cases below illustrate how new types can be created and exposed to Unreal Engine
 > Child of a managed class just extends data and functionality of it's parent, which is fully available on .NET side. 
 > But Unreal Engine will know only about types that were provided.
 >
-> **Warning**: information about managed parent will not be exposed, unless it is marked with `UClassAttribute`.
+> **Warning**: information about managed parent will not be exposed, unless it is marked with `UClass` attribute.
 
 ---
 
@@ -169,17 +212,127 @@ Cases below illustrate how new types can be created and exposed to Unreal Engine
 > It is possible, because source generator **does not** extend your type. 
 > Instead it generates a new type inside of separate assembly, which contains all the metadata about your type. Also name of a managed parent is required to be unspecified in attribute, because it is already specified by inheritance.
 
----
-
-**Case**: I want to inherit my type from already exposed type, but without exposing new one  
+**Case**: I want to use DI to inject my service to exposed type  
 **Solution**:
 
-> Not implemented.
+> *ExposedType.cs*:
+> ```csharp
+> [UClass("NativeParent")]
+> public class ExposedType
+> {
+>     private readonly IRequiredService _requiredService;
+>     private readonly IOptionalService _optionalService;
+>
+>     public ExposedType
+>     (
+>         [InjectRequired] IRequiredService requiredService, 
+>         [InjectOptional] IOptionalService optionalService
+>     ) 
+>     {
+>         _requiredService = requiredService;
+>         _optionalService = optionalService;
+>     }
+> 
+>     [InjectRequired]
+>     IRequiredService AnotherRequiredService { get; init; }
+>
+>     [InjectOptional]
+>     IOptionalService AnotherOptionalService { get; init; }
+>
+>     // implementation
+> }
+> ```
+>
+> UNET supports both property and constructor DI. 
+> Also it is possible to manually resolve targets by requesting `IServiceProvider` in constructor.  
+> For more info read [Object handling].
+---
+
+**Case**: I want to make hidden (internal) implementation of exposed type, which will be unknown to Unreal Engine  
+**Solution**:
+
+> *ExposedManagedParent.cs*
+> ```csharp
+> [UClass("NativeParent")]
+> [TargetResolver(typeof(HiddenWrapperResolver))]
+> public class ExposedManagedParent
+> {
+>     public ExposedType() { }
+> 
+>     // implementation
+> }
+> ```
+>
+> *InternalTypeImplementation.cs*:
+> ```csharp
+> internal class InternalTypeImplementation : ExposedManagedParent
+> {
+>     public ExposedType() : base() { }
+> 
+>     // implementation
+> }
+> ```
+>
+> *HiddenWrapperResolver.cs*:
+> ```csharp
+> public class HiddenWrapperResolver : ITypeResolver
+> {
+>     public Type Resolve()
+>     {
+>          return typeof(InternalTypeImplementation);
+>     }
+> }
+> ```
+>
+> It is possible, but custom type resolver is required to produce hidden implementations of wrappers. Type of resolver must be specified with `TargetResolver` attribute in exposed type.  
+>
+> For more info read [Object handling](object-handling.md#creating-instance-of-hidden-implementation-of-exposed-wrapper). 
 
 ---
 
 ## Property
 
-> Not implemented yet.
+**Case**: I want to define property in exposed or imported type that can access native data 
+**Solution**:
 
-> ## Scenarios
+> *SomeType.cs*:
+> ```csharp
+> [UClass("Object")]
+> public class SomeType
+> {
+>     [PropertyInfo(BlueprintReadable = true)]
+>     public UProperty<int> SomeInteger { get; init; }
+> }
+> ```
+> Just wrap target type with `UProperty<>`.
+>
+> **Note**: `PropertyInfo` attribute can be used to change property metadata and can be ommited.
+
+---
+
+**Case**: I want to define a read-only property in exposed or imported type that can access native data  
+**Solution**:
+
+> *SomeType.cs*:
+> ```csharp
+> [UClass("Object")]
+> public class SomeType
+> {
+>     public ReadOnlyUProperty<int> SomeInteger { get; init; }
+> }
+> ```
+> Use `ReadOnlyUProperty` as wrapper instead of `UProperty`
+
+---
+
+**Case**: I want to create UProperty in a type that is not interacting with Unreal Engine  
+**Solution**:
+
+> It is possible, but not recommended, because it can lead to unexpected behavior.
+
+---
+
+[Object handling]: object-handling.md
+[Metadata generation]: metadata-generation.md
+[UE Naming conventions]: https://docs.unrealengine.com/4.27/en-US/ProductionPipelines/DevelopmentSetup/CodingStandard/#namingconventions
+[.NET GC Fundamentals]: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals#memory-release

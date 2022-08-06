@@ -34,3 +34,7 @@ Each UNET Plugin is loaded to it's own `AssemblyLoadContext`, but it's dependenc
 When UNET Plugin is detected, UNET Plugin Loader will load it and search for special assembly attribute containing `MetadataProvider` instance, which will provide all metadata that was produced by UNET Source Generator. 
 
 For each type that has metadata, it will just use Unreal Engine type loading system and provide all required data to register exposed .NET types.
+
+## Loading exposed class information
+
+> TODO: write this section
