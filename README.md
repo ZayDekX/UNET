@@ -2,7 +2,7 @@
 
 .NET integration for Unreal Engine
 
-[API] | [Manual]
+[API] | [Manual] | [Installation]
 
 ## Core Features
 
@@ -21,3 +21,4 @@
 
 [API]: docs/api/README.md
 [Manual]: docs/README.md
+[Installation]: docs/installation.md
