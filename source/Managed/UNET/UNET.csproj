@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Platforms>x64</Platforms>
+
+        <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
+
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+        
+        <EnableDynamicLoading>True</EnableDynamicLoading>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <TieredCompilation>False</TieredCompilation>
+        <ServerGarbageCollection>False</ServerGarbageCollection>
+        <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <Optimize>True</Optimize>
+        <DebugType>none</DebugType>
+        <DebugSymbols>false</DebugSymbols>
+        <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+        <Optimize>False</Optimize>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="ObjectHandling\**" />
+      <EmbeddedResource Remove="ObjectHandling\**" />
+      <None Remove="ObjectHandling\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\UNET.Interop\UNET.Interop.csproj" />
+    </ItemGroup>
+
+</Project>
