@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -32,13 +32,7 @@
         <DebugSymbols>true</DebugSymbols>
         <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Compile Remove="ObjectHandling\**" />
-      <EmbeddedResource Remove="ObjectHandling\**" />
-      <None Remove="ObjectHandling\**" />
-    </ItemGroup>
-
+    
     <ItemGroup>
       <ProjectReference Include="..\UNET.Interop\UNET.Interop.csproj" />
     </ItemGroup>

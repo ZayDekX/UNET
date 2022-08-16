@@ -1,0 +1,3 @@
+#pragma once
+
+UNET_API DECLARE_LOG_CATEGORY_EXTERN(LogUNET, Log, All);

@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "UNET",
+	"Description": "Unreal Engine .NET integration",
+	"Category": "Programming",
+	"CreatedBy": "ZayDekX",
+	"CreatedByURL": "https://github.com/ZayDekX/UNET",
+	"DocsURL": "https://github.com/ZayDekX/UNET/tree/main/docs",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/ZayDekX/UNET/issues",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "UNET",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

@@ -13,8 +13,8 @@ internal static unsafe class Loader
 #pragma warning disable IDE0052, CA1823 // Remove unread private members, Avoid unused private fields
     private unsafe struct LoaderDelegates
     {
-        private static readonly LoaderDelegates _instance;
-        internal static readonly LoaderDelegates* InstancePtr = (LoaderDelegates*)Unsafe.AsPointer(ref _instance);
+        internal static readonly LoaderDelegates Instance;
+        internal static readonly LoaderDelegates* InstancePtr = (LoaderDelegates*)Unsafe.AsPointer(ref Instance);
 
         public LoaderDelegates()
         { }
@@ -56,7 +56,7 @@ internal static unsafe class Loader
     /// <param name="nativeDelegates">Pointer to external functions, that will be used by Core Core</param>
     /// <param name="loaderDelegates">Pointer to Core Plugin Loader functions that should be exposed</param>
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-    private static void Init(char* pluginsPath, int pathLength, IntPtr nativeDelegates, LoaderDelegates** loaderDelegates)
+    private static void Init(char* pluginsPath, int pathLength, IntPtr nativeDelegates, LoaderDelegates* loaderDelegates)
     {
         if (IsInitialized)
         {
@@ -70,7 +70,7 @@ internal static unsafe class Loader
         OnPluginLoaded += PluginManager.Initialize;
         AppDomain.CurrentDomain.UnhandledException += ReportUnhandledException;
 
-        *loaderDelegates = LoaderDelegates.InstancePtr;
+        *loaderDelegates = new();
 
         Debug.Log(ELogVerbosity.Display, "Managed UNET Core is initialized");
 
