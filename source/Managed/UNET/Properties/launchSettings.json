@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "UNET": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
